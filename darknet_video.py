@@ -69,14 +69,15 @@ def postCoordinates(vehicles):
 
 
     #print(coordinates)
-
+    return coordinates
 
 
 def convertBack(x, y, w, h):
-    xmin = int(round(x - (w / 2)))
-    xmax = int(round(x + (w / 2)))
-    ymin = int(round(y - (h / 2)))
-    ymax = int(round(y + (h / 2)))
+    #xmin = int(round(x - (w / 2)))
+    xmin = float(x - (w / 2))
+    xmax = float(x + (w / 2))
+    ymin = float(y - (h / 2))
+    ymax = float(y + (h / 2))
     return xmin, ymin, xmax, ymax
 
 coordinates = []
@@ -104,17 +105,20 @@ def cvDrawBoxes(detections, img,count):
             float(x), float(y), float(w), float(h))
         pt1 = (xmin, ymin)
         pt2 = (xmax, ymax)
-       
-    
+
+        pt11 = (int(xmin),int(ymin))
+        pt22 = (int(xmax), int(ymax))
 
 
 
 
     vehicles = []
     for detection in detections:
-        print(detection)
-        if(str(detection[0])== "b'traffic light'"):
-            print(detection[0])
+        
+        #print(detection[2])
+        #print(detection)
+        #if(str(detection[0])== "b'traffic light'"):
+            #print(detection[0])
         var = detections.index(detection)
         
         #print(detection)
@@ -128,9 +132,15 @@ def cvDrawBoxes(detections, img,count):
         xmin, ymin, xmax, ymax = convertBack(
             float(x), float(y), float(w), float(h))
 
-        print(xmin, ymin, xmax, ymax,count)
+        #print(xmin, ymin, xmax, ymax,count)
         pt1 = (xmin, ymin)
         pt2 = (xmax, ymax)
+
+        pt11 = (int(xmin),int(ymin))
+        pt22 = (int(xmax), int(ymax))
+
+
+
         #cropped_image = img[ymin:ymax, xmin:xmax]
         #cropped_image = img.crop((pt1(0),pt1(1),pt2(0),pt2(1)))
         #mahotas.imsave(dirName+"/image%d.jpg"%var,cropped_image)
@@ -138,7 +148,7 @@ def cvDrawBoxes(detections, img,count):
         
         add = {} 
         
-        if(15<abs(pt1[0]-pt2[0])<200 and detection[1]>0.7 and str(detection[0])!="b'traffic light'" ):
+        if(15<abs(pt1[0]-pt2[0])<250 and detection[1]>0.6 and pt2[1]<340 and str(detection[0])!="b'traffic light'" ):
             if(count==0):
                 initialgetCoordinates(pt1[0],pt2[0],pt1[1],pt2[1])
             else:
@@ -150,21 +160,21 @@ def cvDrawBoxes(detections, img,count):
                 #print(vehicle_i)
                 vehicles.append(vehicle_i)
 
-                
-            cv2.rectangle(img, pt1, pt2, (0, 255, 0), 1)
+            #print("pt11 is ," + str(pt11) )    
+            cv2.rectangle(img, pt11, pt22, (0, 255, 0), 1)
             cv2.putText(img,
                       detection[0].decode() +
                       " [" + str(round(detection[1] * 100, 2)) + "]",
-                      (pt1[0], pt1[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                      (pt11[0], pt11[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                       [0, 255, 0], 2)
     if(count>0):
         #print(vehicles)
         postCoordinates(vehicles)
-    img = checkWarning(coordinates,img)
+    img = checkWarning(coordinates,img,count)
     #print(coordinates)
     return img
 
-def checkWarning(coordinates,img):
+def checkWarning(coordinates,img,count):
     for i in range(0,len(coordinates)):
         current = coordinates[i]
         length = len(current)
@@ -213,11 +223,11 @@ def checkWarning(coordinates,img):
             y1 = array(y1)
             model = polyfit(x,y,1)
             predict = poly1d(model)
-            predicted_y = predict(60)
+            predicted_y = predict(120)
 
             model1 = polyfit(x,y1,1)
             predict1 = poly1d(model1)
-            predicted_x = predict1(60)
+            predicted_x = predict1(120)
             
 
             #if(420<s<800 and 125<predicted_x<275):
@@ -225,17 +235,22 @@ def checkWarning(coordinates,img):
                 #break
 
 
-            print(predicted_y)
-            print(s)
-            print(predicted_x)
-            if(375<predicted_y and 125<predicted_x<325):
-                print(y)
-                print(predicted_y)
+            #print(predicted_y)
+            #print(s)
+            #print(predicted_x)
+            if(350<predicted_y and 85<predicted_x<380):
+                #print(y)
+                #print(predicted_y)
 
-                print(y1)
+                #print(y1)
+                #print("current vehicle is : " + str(current))
+                #print("predicted_x is : " + str(predicted_x))
+                #print("predicted_y is : " + str(predicted_y))
+                print(count)
+
                 
-                print(predicted_x)
                 print("predict warning")
+                #print(current)
                 cv2.putText(img,"warning",(10,50),cv2.FONT_HERSHEY_SIMPLEX,fontScale=2.5,thickness=5,color=(255,0,0))
                 break
             
@@ -291,16 +306,16 @@ def YOLO():
         except Exception:
             pass
     #cap = cv2.VideoCapture(0)
-    cap = cv2.VideoCapture("test.mp4")
+    cap = cv2.VideoCapture("008.mp4")
     
     count = 0
     cap.set(3, 1280)
     cap.set(4, 720)
     
     fps = cap.get(cv2.CAP_PROP_FPS)
-    #print(fps)
+    print(fps)
     out = cv2.VideoWriter(
-        "test.avi", cv2.VideoWriter_fourcc(*"XVID"), fps,
+        "008.avi", cv2.VideoWriter_fourcc(*"XVID"), fps,
         (darknet.network_width(netMain), darknet.network_height(netMain)))
     print("Starting the YOLO loop...")
 
